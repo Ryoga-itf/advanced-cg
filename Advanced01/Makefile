@@ -1,5 +1,5 @@
 CXX      := g++
-CXXFLAGS := -O3 -std=c++11 -Iinclude -I../common
+CXXFLAGS := -O3 -std=c++20 -Iinclude -I../common
 LDLIBS   := -lglfw -lGLEW -lGL -lIL -lILU -lILUT
 
 SRCDIR   := src
