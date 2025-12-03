@@ -1,9 +1,9 @@
 CXX      := g++
 CXXFLAGS := -O3 -std=c++20 \
-						-Iinclude \
-						-I../common/include \
-						-I../common/include/rx \
-						-I../common/imgui \
+            -Iinclude \
+            -I../common/include \
+            -I../common/include/rx \
+            -I../common/imgui \
 
 LDLIBS   := -lglfw -lGLEW -lGL -lIL -lILU -lILUT
 
@@ -20,35 +20,35 @@ VPATH := $(SRCDIR)
 
 SRCS := \
   deformation \
-	scene \
-	main
+  scene \
+  main
 
 OBJS := $(addprefix $(OBJDIR)/,$(addsuffix .o,$(SRCS)))
 
 all: $(TARGET)
 
 $(TARGET): $(OBJS) $(IMGUI_LIB) $(TFD_LIB)
-	$(CXX) -o $@ $(OBJS) $(IMGUI_LIB) $(TFD_LIB) $(LDLIBS)
+  $(CXX) -o $@ $(OBJS) $(IMGUI_LIB) $(TFD_LIB) $(LDLIBS)
 
 $(OBJDIR)/%.o: %.cpp | $(OBJDIR)
-	$(CXX) $(CXXFLAGS) -c $< -o $@
+  $(CXX) $(CXXFLAGS) -c $< -o $@
 
 $(OBJDIR):
-	mkdir -p $@
+  mkdir -p $@
 
 $(IMGUI_LIB):
-	$(MAKE) -C $(IMGUI_LIB_DIR)
+  $(MAKE) -C $(IMGUI_LIB_DIR)
 
 $(TFD_LIB):
-	$(MAKE) -C $(TFD_LIB_DIR)
+  $(MAKE) -C $(TFD_LIB_DIR)
 
 run: $(TARGET)
-	cd $(TARGETDIR); ./$(TARGET); cd -
+  cd $(TARGETDIR); ./$(TARGET); cd -
 
 report:
-	$(TYPST) compile report/report.typ --root ..
+  $(TYPST) compile report/report.typ --root ..
 
 clean:
-	rm -rf $(OBJDIR) $(TARGET)
+  rm -rf $(OBJDIR) $(TARGET)
 
 .PHONY: all run report clean
