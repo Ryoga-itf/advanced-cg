@@ -1,9 +1,9 @@
 CXX      := g++
 CXXFLAGS := -O3 -std=c++20 \
-            -Iinclude \
-            -I../common/include \
-            -I../common/imgui \
-            -I../common/tinyfiledialogs
+						-Iinclude \
+						-I../common/include \
+						-I../common/imgui \
+						-I../common/tinyfiledialogs
 
 LDLIBS   := -lglfw -lGLEW -lGL -lIL -lILU -lILUT
 
@@ -20,20 +20,20 @@ TFD_LIB          := $(TFD_LIB_DIR)/libtinyfiledialogs.a
 VPATH := $(SRCDIR)
 
 SRCS := \
-  AbstractScene \
-  CheckGLError \
-  GLSLProgramObject \
-  GLSLShaderObject \
-  Image2OGLTexture \
-  Scene01Checker2D \
-  Scene02ImageSmoothing \
-  Scene03WaveAnimation \
-  Scene04PseudoNormal \
-  Scene05EnvironmentMapping \
-  Scene06 \
-  TriMesh \
-  arcball_camera \
-  main
+	AbstractScene \
+	CheckGLError \
+	GLSLProgramObject \
+	GLSLShaderObject \
+	Image2OGLTexture \
+	Scene01Checker2D \
+	Scene02ImageSmoothing \
+	Scene03WaveAnimation \
+	Scene04PseudoNormal \
+	Scene05EnvironmentMapping \
+	Scene06 \
+	TriMesh \
+	arcball_camera \
+	main
 
 OBJS := $(addprefix $(OBJDIR)/,$(addsuffix .o,$(SRCS)))
 
@@ -42,27 +42,27 @@ TYPST    := typst
 all: $(TARGET)
 
 $(TARGET): $(OBJS) $(IMGUI_LIB) $(TFD_LIB)
-  $(CXX) -o $@ $(OBJS) $(IMGUI_LIB) $(TFD_LIB) $(LDLIBS)
+	$(CXX) -o $@ $(OBJS) $(IMGUI_LIB) $(TFD_LIB) $(LDLIBS)
 
 $(OBJDIR)/%.o: %.cpp | $(OBJDIR)
-  $(CXX) $(CXXFLAGS) -c $< -o $@
+	$(CXX) $(CXXFLAGS) -c $< -o $@
 
 $(OBJDIR):
-  mkdir -p $@
+	mkdir -p $@
 
 $(IMGUI_LIB):
-  $(MAKE) -C $(IMGUI_LIB_DIR)
+	$(MAKE) -C $(IMGUI_LIB_DIR)
 
 $(TFD_LIB):
-  $(MAKE) -C $(TFD_LIB_DIR)
+	$(MAKE) -C $(TFD_LIB_DIR)
 
 run: $(TARGET)
-  ./$(TARGET)
+	./$(TARGET)
 
 report:
-  $(TYPST) compile report/report.typ --root ..
+	$(TYPST) compile report/report.typ --root ..
 
 clean:
-  rm -rf $(OBJDIR) $(TARGET)
+	rm -rf $(OBJDIR) $(TARGET)
 
 .PHONY: all run report clean
