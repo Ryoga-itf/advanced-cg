@@ -1,0 +1,5 @@
+-Iinclude
+-I../common/include
+-I../common/imgui
+-I../common/tinyfiledialogs
+-std=c++20
