@@ -15,7 +15,7 @@
 //-----------------------------------------------------------------------------
 // インクルードファイル
 //-----------------------------------------------------------------------------
-#include "utils.h"
+#include "utils.hpp"
 #include "imgui.h"
 
 
@@ -24,8 +24,7 @@
 #include "rx_texture.h"
 
 // BVHファイル
-#include "characteranimation.h"
-
+#include "characteranimation.hpp"
 // メッシュファイル読み込み関連
 #include "rx_obj.h"
 

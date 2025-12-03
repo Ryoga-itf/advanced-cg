@@ -14,8 +14,8 @@
 //-----------------------------------------------------------------------------
 // Include Files
 //-----------------------------------------------------------------------------
-#include "utils.h"
-#include "dualquaternion.h"
+#include "utils.hpp"
+#include "dualquaternion.hpp"
 #include "rx_mesh.h"
 
 using namespace std;

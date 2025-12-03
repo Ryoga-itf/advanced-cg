@@ -27,7 +27,7 @@
 //#include "imgui_impl_opengl3.h"
 #include <GLFW/glfw3.h>
 
-#include "scene.h"
+#include "scene.hpp"
 
 
 #if defined(_MSC_VER) && (_MSC_VER >= 1900) && !defined(IMGUI_DISABLE_WIN32_FUNCTIONS)
