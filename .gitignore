@@ -3,6 +3,12 @@
 .env.local
 *.pdf
 
+# Advanced01
+Advanced01/advanced01
+Advanced02/advanced02
+Advanced03/advanced03
+Advanced04/advanced04
+
 # Prerequisites
 *.d
 
