@@ -1,14 +1,16 @@
 #pragma once
 
-#include "AbstractScene.h"
-#include "TriMesh.h"
-#include "arcball_camera.h"
+#include "AbstractScene.hpp"
+#include "TriMesh.hpp"
+#include "arcball_camera.hpp"
 #include "imgui.h"
 #include <string>
 #include <vector>
 
-class Scene05EnvironmentMapping : public AbstractScene {
+class Scene04PseudoNormal : public AbstractScene {
   public:
+    enum Render_Type { Render_None, Render_Texture, Render_Pseudo_Normal };
+
     static void Init();
     static void ReloadShaders();
     static void Draw();
@@ -19,17 +21,16 @@ class Scene05EnvironmentMapping : public AbstractScene {
     static void Destroy();
 
   private:
-    static GLSLProgramObject *s_pTexShader, *s_pShader;
+    static GLSLProgramObject *s_pTexShader, *s_pColorShader, *s_pShader;
     static std::string s_VertexShaderFilename, s_FragmentShaderFilename;
+
+    static bool s_RenderWireframe;
+    static int s_RenderType;
 
     static TriMesh s_TriMesh;
 
     static glm::vec2 s_PrevMouse;
     static ArcballCamera s_Camera;
 
-    static int s_NumSkyDomeVertices;
-    static GLuint s_VAO, s_EnvMapTexID, s_SkyDomeVAO;
-
-    static void BuildSkyDome();
-    static void RenderSkyDome();
+    static GLuint s_TexVAO, s_NormalVAO;
 };

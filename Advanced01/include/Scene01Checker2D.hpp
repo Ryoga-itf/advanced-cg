@@ -1,10 +1,10 @@
 #pragma once
 
-#include "AbstractScene.h"
+#include "AbstractScene.hpp"
 #include "imgui.h"
 #include <string>
 
-class Scene06 : public AbstractScene {
+class Scene01Checker2D : public AbstractScene {
   public:
     static void Init();
     static void ReloadShaders();
@@ -19,15 +19,8 @@ class Scene06 : public AbstractScene {
     static GLSLProgramObject *s_pShader;
     static std::string s_VertexShaderFilename, s_FragmentShaderFilename;
 
+    static ImVec4 s_CheckerColor0, s_CheckerColor1;
+    static ImVec2 s_CheckerScale;
+
     static GLuint s_VBO, s_VAO;
-
-    static GLuint s_StateTex[2], s_FBO[2];
-    static int s_Ping;
-    static int s_GridW, s_GridH;
-    static bool s_Running;
-
-    static void CreateStateResources(int w, int h);
-    static void DestroyStateResources();
-    static void UpdateOnce();
-    static void BlitToScreen();
 };

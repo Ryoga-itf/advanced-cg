@@ -1,12 +1,13 @@
 #pragma once
 
-#include "AbstractScene.h"
-#include "arcball_camera.h"
+#include "AbstractScene.hpp"
+#include "TriMesh.hpp"
+#include "arcball_camera.hpp"
 #include "imgui.h"
 #include <string>
 #include <vector>
 
-class Scene03WaveAnimation : public AbstractScene {
+class Scene05EnvironmentMapping : public AbstractScene {
   public:
     static void Init();
     static void ReloadShaders();
@@ -18,13 +19,17 @@ class Scene03WaveAnimation : public AbstractScene {
     static void Destroy();
 
   private:
-    static GLSLProgramObject *s_pShader;
+    static GLSLProgramObject *s_pTexShader, *s_pShader;
     static std::string s_VertexShaderFilename, s_FragmentShaderFilename;
 
-    static int s_NumQuadLineVertices;
+    static TriMesh s_TriMesh;
 
     static glm::vec2 s_PrevMouse;
     static ArcballCamera s_Camera;
 
-    static GLuint s_VBO, s_VAO;
+    static int s_NumSkyDomeVertices;
+    static GLuint s_VAO, s_EnvMapTexID, s_SkyDomeVAO;
+
+    static void BuildSkyDome();
+    static void RenderSkyDome();
 };

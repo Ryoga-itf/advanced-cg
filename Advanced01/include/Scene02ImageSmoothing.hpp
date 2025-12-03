@@ -1,6 +1,6 @@
 #pragma once
 
-#include "AbstractScene.h"
+#include "AbstractScene.hpp"
 #include "imgui.h"
 #include <string>
 #include <vector>

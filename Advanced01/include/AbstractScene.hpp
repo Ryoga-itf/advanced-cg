@@ -1,6 +1,6 @@
 #pragma once
 
-#include "GLSLProgramObject.h"
+#include "GLSLProgramObject.hpp"
 
 #include "GLFW/glfw3.h"
 #include "glm/ext.hpp" // for glm::to_string()
