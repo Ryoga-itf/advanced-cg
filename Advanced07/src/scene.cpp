@@ -7,13 +7,11 @@
 
 #include "imgui.h"
 
-// テクスチャ・画像
-#include "rx_bitmap.h"
-#include "rx_texture.h"
-
 // OpenGL描画関連
-#include "rx_shaders.h"   // GLSL関数
 #include "rx_trackball.h" // 視点変更用トラックボールクラス
+
+// メッシュファイル読み込み関連
+#include "rx_obj.h"
 
 //-----------------------------------------------------------------------------
 // 定数・変数

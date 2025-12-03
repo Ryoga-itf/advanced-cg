@@ -3,17 +3,13 @@
 #ifndef _RX_CONTROLLER_H_
 #define _RX_CONTROLLER_H_
 
-#include "imgui.h"
 #include "utils.hpp"
 
 // トラックボール＆テクスチャ
-#include "rx_texture.h"
 #include "rx_trackball.h"
 
 // BVHファイル
 #include "characteranimation.hpp"
-// メッシュファイル読み込み関連
-#include "rx_obj.h"
 
 using namespace std;
 
