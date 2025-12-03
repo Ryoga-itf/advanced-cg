@@ -8,8 +8,7 @@ out vec3 eNormal;
 uniform mat3 modelViewInverseTransposed;
 uniform mat4 projModelViewMatrix;
 
-void main()
-{
-	eNormal = modelViewInverseTransposed * vertexNormal;
-	gl_Position = projModelViewMatrix * vertexPosition;
+void main() {
+    eNormal = modelViewInverseTransposed * vertexNormal;
+    gl_Position = projModelViewMatrix * vertexPosition;
 }

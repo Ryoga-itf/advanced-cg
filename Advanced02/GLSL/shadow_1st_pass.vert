@@ -5,7 +5,6 @@ in vec3 vertexNormal;
 
 uniform mat4 projModelViewMatrix;
 
-void main()
-{
-	gl_Position = projModelViewMatrix * vertexPosition;
+void main() {
+    gl_Position = projModelViewMatrix * vertexPosition;
 }

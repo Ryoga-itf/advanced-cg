@@ -7,8 +7,7 @@ out vec2 vTexCoord;
 
 uniform mat4 projModelViewMatrix;
 
-void main()
-{
-	vTexCoord = inTexCoord;
-	gl_Position = projModelViewMatrix * vertexPosition;
+void main() {
+    vTexCoord = inTexCoord;
+    gl_Position = projModelViewMatrix * vertexPosition;
 }
