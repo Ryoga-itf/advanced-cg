@@ -25,6 +25,8 @@ SRCS := \
 
 OBJS := $(addprefix $(OBJDIR)/,$(addsuffix .o,$(SRCS)))
 
+TYPST := typst
+
 all: $(TARGET)
 
 $(TARGET): $(OBJS) $(IMGUI_LIB) $(TFD_LIB)
