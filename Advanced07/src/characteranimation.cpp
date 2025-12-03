@@ -1,6 +1,7 @@
 // BVHファイルに基づくキャラクターアニメーション
 
 #include "characteranimation.hpp"
+#include "dualquaternion.hpp"
 
 #include <stack>
 
@@ -63,45 +64,59 @@ int CharacterAnimation::skinningLBS(vector<glm::vec3> &vrts, const vector<map<in
  */
 int CharacterAnimation::skinningDQS(vector<glm::vec3> &vrts, const vector<map<int, double>> &weights) {
     // 頂点毎に変換DQを重みをかけながら適用
-    int nv = (int)(vrts.size());
+    const int nv = static_cast<int>(vrts.size());
+
     for (int i = 0; i < nv; ++i) {
-        const int n_joints = static_cast<int>(weights[i].size()); // 頂点vに対応するジョイント数
-        glm::vec3 v = vrts[i];                                    // 更新前(オリジナル)のスキンメッシュ頂点位置
-        glm::vec3 v_new = v;                                      // 更新後のスキンメッシュ頂点位置
+        const auto &vertexWeights = weights[i];
 
-        // TODO:この部分にDQSによる頂点位置の計算を書く
-        // ・変数v_newにスキンメッシュ頂点vのDQSによる更新後の位置を格納する
-        // ・LBSと違って4x4行列との掛け算はない(全て四元数との演算)ため，
-        //   こちらではglm::vec3として頂点座標を取り出していることに注意
-        // ・頂点vに対応するジョイント番号とその重みは以下のようにして取得できる
-        //	map<int, double>::const_iterator itr = weights[i].begin();
-        //	for(; itr != weights[i].end(); ++itr){
-        //		int j = itr->first;	// ジョイント番号
-        //		float wij = static_cast<float>(itr->second);	// 重み
-        //		// ここにジョイントjに関する処理を書く
-        //
-        //	}
-        // ・ジョイントjのrest(bind) poseでのワールド変換行列(スライドp28のBj)は
-        //    m_joints[j].B
-        //   に格納されており，回転を含むワールド変換行列(スライドp28のWj)は
-        //    m_joints[j].W
-        //   に格納されている(どちらもglm::mat4型)
-        // ・四元数や行列については授業スライドの最後の方の説明を参照すること
-        // ・Dual Quaternionを扱うための，DualQuaternion型を定義してある(dualquaternion.h)ので自由に使ってください．
-        //   基本的な演算は定義してありますが，頂点vのDual
-        //   Quaternionによる変換は定義されていないので自分でここに実装してください．
-        // ・注意としてDual Quaternionを重みを掛けながら足し合わせていくという演算をする場合，Dual
-        // Quaternionの初期化が必要になります．
-        //   こちらで用意したDualQuaternionクラスはデフォルトではreal partを単位四元数(1,0,0,0)，dual
-        //   partを(0,0,0,0)で初期化しますが， Dual Quaterionを足し合わせて行く場合は回転部分を表すreal
-        //   partも(0,0,0,0)で初期化するか，
-        //   1つめの重み&位置姿勢を初期値として代入して，2つめ以降の重み&位置姿勢を足し合わせていくといった方法を取る必要があります．
+        if (vertexWeights.empty()) {
+            continue;
+        }
 
-        // ----課題ここから----
+        const glm::vec3 v = vrts[i];
 
-        // ----課題ここまで----
+        DualQuaternion dqBlend;
+        dqBlend.m_real = glm::quat{0.0f, 0.0f, 0.0f, 0.0f};
+        dqBlend.m_dual = glm::quat{0.0f, 0.0f, 0.0f, 0.0f};
 
-        vrts[i] = glm::vec3(v_new[0], v_new[1], v_new[2]);
+        for (const auto &entry : vertexWeights) {
+            const int j = entry.first;
+            const float wij = static_cast<float>(entry.second);
+
+            const glm::mat4 &Wj = m_joints[j].W; // current pose
+            const glm::mat4 &Bj = m_joints[j].B; // bind pose
+
+            const glm::mat3 RWj = glm::mat3{Wj};
+            const glm::quat qWj = glm::quat_cast(RWj);
+            const glm::vec3 tWj = glm::vec3{Wj[3]};
+
+            const glm::mat3 RBj = glm::mat3{Bj};
+            const glm::quat qBj = glm::quat_cast(RBj);
+            const glm::vec3 tBj = glm::vec3{Bj[3]};
+
+            // Dual Quaternion
+            const DualQuaternion dqCurrent(qWj, tWj);
+            const DualQuaternion dqBind(qBj, tBj);
+
+            // DQ: Wj * Bj^{-1}
+            const DualQuaternion dqSkin = dqCurrent * dqBind.conjugate();
+
+            dqBlend += wij * dqSkin;
+        }
+
+        dqBlend.normalize();
+
+        const glm::quat &qr = dqBlend.m_real;
+        const glm::quat &qd = dqBlend.m_dual;
+
+        // t = 2 * (qd * qr^*)
+        const glm::quat qrConj = glm::conjugate(qr);
+        const glm::quat tQuat = qd * qrConj;
+        const glm::vec3 t = 2.0f * glm::vec3{tQuat.x, tQuat.y, tQuat.z};
+
+        const glm::vec3 vRot = glm::rotate(qr, v);
+
+        vrts[i] = vRot + t;
     }
 
     return 1;
