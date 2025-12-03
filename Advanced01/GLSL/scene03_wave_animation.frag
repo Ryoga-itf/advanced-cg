@@ -4,7 +4,6 @@ out vec4 fragColor;
 
 uniform vec4 lineColor;
 
-void main()
-{
-	fragColor = lineColor;
+void main() {
+    fragColor = lineColor;
 }

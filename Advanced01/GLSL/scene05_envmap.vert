@@ -9,12 +9,11 @@ out vec3 vWorldNormal;
 uniform mat4 projModelViewMatrix;
 uniform vec3 eye;
 
-void main()
-{
-	vec3 world_pos = vertexPosition.xyz;
-	vWorldEyeDir = normalize(world_pos - eye);
+void main() {
+    vec3 world_pos = vertexPosition.xyz;
+    vWorldEyeDir = normalize(world_pos - eye);
 
-	vWorldNormal = normalize(vertexNormal);
+    vWorldNormal = normalize(vertexNormal);
 
-	gl_Position = projModelViewMatrix * vertexPosition;
+    gl_Position = projModelViewMatrix * vertexPosition;
 }
