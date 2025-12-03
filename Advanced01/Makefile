@@ -1,7 +1,7 @@
 CXX      := g++
 CXXFLAGS := -O3 -std=c++20 \
 						-Iinclude \
-						-I../common \
+						-I../common/include \
 						-I../common/imgui \
 						-I../common/tinyfiledialogs
 
