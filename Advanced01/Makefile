@@ -4,11 +4,14 @@ LDLIBS   := -lglfw -lGLEW -lGL -lIL -lILU -lILUT
 
 SRCDIR   := src
 OBJDIR   := build
+COMMONDIR := ../common
+IMGUIDIR  := ../common/imgui
+
 TARGET   := advanced01
 
 TYPST    := typst
 
-VPATH := $(SRCDIR):../common/imgui
+VPATH := $(SRCDIR):$(COMMONDIR):$(IMGUIDIR)
 
 CORE_SOURCES := \
 	AbstractScene \
@@ -24,7 +27,9 @@ CORE_SOURCES := \
 	Scene06 \
 	TriMesh \
 	arcball_camera \
-	main \
+	main
+
+COMMON_SOURCES := \
 	tinyfiledialogs
 
 IMGUI_SOURCES := \
@@ -35,7 +40,7 @@ IMGUI_SOURCES := \
 	imgui_tables \
 	imgui_widgets
 
-SRCS := $(CORE_SOURCES) $(IMGUI_SOURCES)
+SRCS := $(CORE_SOURCES) $(COMMON_SOURCES) $(IMGUI_SOURCES)
 OBJS := $(addprefix $(OBJDIR)/,$(addsuffix .o,$(SRCS)))
 
 all: $(TARGET)
