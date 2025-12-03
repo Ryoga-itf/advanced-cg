@@ -1,0 +1,5 @@
+-Iinclude
+-I../common/include
+-I../common/include/rx
+-I../common/imgui
+-std=c++20
