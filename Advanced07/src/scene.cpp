@@ -17,6 +17,8 @@
 //-----------------------------------------------------------------------------
 #include "scene.hpp"
 
+#include "imgui.h"
+
 // テクスチャ・画像
 #include "rx_texture.h"
 #include "rx_bitmap.h"
