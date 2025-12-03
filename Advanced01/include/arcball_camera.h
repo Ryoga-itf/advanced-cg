@@ -18,7 +18,7 @@ class ArcballCamera {
     // eye position and world space rotation axes
     glm::mat4 camera, inv_camera;
 
-public:
+  public:
     /* Create an arcball camera focused on some center point
      * screen: [win_width, win_height]
      */
@@ -54,7 +54,6 @@ public:
     // Get the up direction of the camera in world space
     glm::vec3 up() const;
 
-private:
+  private:
     void update_camera();
 };
-

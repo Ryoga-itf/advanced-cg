@@ -1,3 +1,3 @@
 #pragma once
 
-void CheckGLError(const char* func, const char* file, int line);
+void CheckGLError(const char *func, const char *file, int line);
