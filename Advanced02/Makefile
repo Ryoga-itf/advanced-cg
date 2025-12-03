@@ -1,14 +1,25 @@
 CXX      := g++
-CXXFLAGS := -O3 -std=c++11 -Iinclude -I../common
+CXXFLAGS := -O3 -std=c++20 \
+						-Iinclude \
+						-I../common/include \
+						-I../common/imgui \
+						-I../common/tinyfiledialogs
+
 LDLIBS   := -lglfw -lGLEW -lGL -lIL -lILU -lILUT
 
 SRCDIR   := src
 OBJDIR   := build
 TARGET   := advanced02
 
-TYPST    := typst
+COMMON_DIR       := ../common
+IMGUI_LIB_DIR    := $(COMMON_DIR)/imgui
+TFD_LIB_DIR      := $(COMMON_DIR)/tinyfiledialogs
+IMGUI_LIB        := $(IMGUI_LIB_DIR)/libimgui.a
+TFD_LIB          := $(TFD_LIB_DIR)/libtinyfiledialogs.a
 
-SRCNAMES := \
+VPATH := $(SRCDIR)
+
+SRCS := \
 	AbstractScene \
 	CheckGLError \
 	DirectionalLightManager \
@@ -20,28 +31,28 @@ SRCNAMES := \
 	Scene03MultipleRenderTarget \
 	TriMesh \
 	arcball_camera \
-	imgui \
-	imgui_draw \
-	imgui_impl_glfw \
-	imgui_impl_opengl3 \
-	imgui_tables \
-	imgui_widgets \
-	main \
-	tinyfiledialogs
+	main
 
-SRCS := $(addprefix $(SRCDIR)/,$(addsuffix .cpp,$(SRCNAMES)))
-OBJS := $(SRCS:$(SRCDIR)/%.cpp=$(OBJDIR)/%.o)
+OBJS := $(addprefix $(OBJDIR)/,$(addsuffix .o,$(SRCS)))
+
+TYPST    := typst
 
 all: $(TARGET)
 
-$(TARGET): $(OBJS)
-	$(CXX) -o $@ $^ $(LDLIBS)
+$(TARGET): $(OBJS) $(IMGUI_LIB) $(TFD_LIB)
+	$(CXX) -o $@ $(OBJS) $(IMGUI_LIB) $(TFD_LIB) $(LDLIBS)
 
-$(OBJDIR)/%.o: $(SRCDIR)/%.cpp | $(OBJDIR)
+$(OBJDIR)/%.o: %.cpp | $(OBJDIR)
 	$(CXX) $(CXXFLAGS) -c $< -o $@
 
 $(OBJDIR):
 	mkdir -p $@
+
+$(IMGUI_LIB):
+	$(MAKE) -C $(IMGUI_LIB_DIR)
+
+$(TFD_LIB):
+	$(MAKE) -C $(TFD_LIB_DIR)
 
 run: $(TARGET)
 	./$(TARGET)
