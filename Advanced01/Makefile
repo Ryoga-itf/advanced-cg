@@ -1,5 +1,5 @@
 CXX      := g++
-CXXFLAGS := -O3 -std=c++20 -Iinclude -I../common
+CXXFLAGS := -O3 -std=c++20 -Iinclude -I../common -I../common/imgui
 LDLIBS   := -lglfw -lGLEW -lGL -lIL -lILU -lILUT
 
 SRCDIR   := src
@@ -8,7 +8,9 @@ TARGET   := advanced01
 
 TYPST    := typst
 
-SRCNAMES := \
+VPATH := $(SRCDIR):../common/imgui
+
+CORE_SOURCES := \
 	AbstractScene \
 	CheckGLError \
 	GLSLProgramObject \
@@ -22,24 +24,26 @@ SRCNAMES := \
 	Scene06 \
 	TriMesh \
 	arcball_camera \
+	main \
+	tinyfiledialogs
+
+IMGUI_SOURCES := \
 	imgui \
 	imgui_draw \
 	imgui_impl_glfw \
 	imgui_impl_opengl3 \
 	imgui_tables \
-	imgui_widgets \
-	main \
-	tinyfiledialogs
+	imgui_widgets
 
-SRCS := $(addprefix $(SRCDIR)/,$(addsuffix .cpp,$(SRCNAMES)))
-OBJS := $(SRCS:$(SRCDIR)/%.cpp=$(OBJDIR)/%.o)
+SRCS := $(CORE_SOURCES) $(IMGUI_SOURCES)
+OBJS := $(addprefix $(OBJDIR)/,$(addsuffix .o,$(SRCS)))
 
 all: $(TARGET)
 
 $(TARGET): $(OBJS)
 	$(CXX) -o $@ $^ $(LDLIBS)
 
-$(OBJDIR)/%.o: $(SRCDIR)/%.cpp | $(OBJDIR)
+$(OBJDIR)/%.o: %.cpp | $(OBJDIR)
 	$(CXX) $(CXXFLAGS) -c $< -o $@
 
 $(OBJDIR):
