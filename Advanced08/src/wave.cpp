@@ -22,28 +22,47 @@ void WaveSWE::advection(float *d_new, float *d, float *u_new, float *v_new, floa
     float dx = m_dx;
     float dy = m_dy;
 
-    // TODO:この部分にSWE計算での移流項の計算コードを書く(セミラグランジュ法で計算すること)
-    // ・配列d_new,u_new,v_newにそれぞれ移流項を適用した後の水深,x方向速度,y方向速度を格納する
-    // ・移流項適用前の水深,速度は配列d,u,vに格納されている
-    //   ⇒ 1次元配列を使っているので，取り出すときはd[IDX(i,j)]のようにIDX関数を使うと便利
-    // ・各グリッドセルの幅は変数dx,dy(もしくはm_dx,m_dy)に入っている
-    // ・グリッドセル数はm_nx,m_nyで，境界を除いた部分を処理した後，境界処理関数bndを呼び出すのが基本的な流れ
-    //  for(int j = 1; j < m_ny-1; ++j){
-    //  	for(int i = 1; i < m_nx-1; ++i){
-    //  		// d,u,vの更新処理
-    //			// ⇒d_new,u_new,v_newに結果を格納
-    //  	}
-    //  }
-    //  bnd(d_new);
-    //  bnd(u_new, v_new);
-    //  ・移流計算でのd,u,vは同じ反復ループ内で計算してもOK．
-    //    ただし，バックトレース位置を求める速度には更新したu_new,v_newではなく移流前の値u,vを使うこと
-    //  ・バックトレースした位置がグリッド範囲外に成らないようにチェックが必要(glm::clamp<int>(x, min,
-    //  max)を上手く使おう)
-    //  ・高さや速度が定義されているのはグリッドセル中心ですが，最小インデックスをもつグリッドセルの中心を原点とした座標系を仮定しているので，
-    //    グリッドセル中心座標は(i*dx, j*dx)でOK((i+0.5)*dxとかにしなくてもよい)
-
     // ----課題ここから----
+    const float max_x = (m_nx - 1) * dx;
+    const float max_y = (m_ny - 1) * dy;
+
+    // バイリニア補間
+    static auto sampleBilinear = [&](const float *f, int i0, int j0, float s, float t) -> float {
+        const float f00 = f[IDX(i0, j0)];
+        const float f10 = f[IDX(i0 + 1, j0)];
+        const float f01 = f[IDX(i0, j0 + 1)];
+        const float f11 = f[IDX(i0 + 1, j0 + 1)];
+        const float f0 = glm::mix(f00, f10, s);
+        const float f1 = glm::mix(f01, f11, s);
+        return glm::mix(f0, f1, t);
+    };
+
+    for (int j = 1; j < m_ny - 1; ++j) {
+        for (int i = 1; i < m_nx - 1; ++i) {
+            // current grid cell
+            const float x = i * dx;
+            const float y = j * dy;
+
+            // バックトレース
+            const float x0 = glm::clamp(x - u[IDX(i, j)] * dt, 0.0f, max_x);
+            const float y0 = glm::clamp(y - v[IDX(i, j)] * dt, 0.0f, max_y);
+
+            // 出発点の index
+            const int i0 = glm::clamp(static_cast<int>(floor(x0 / dx)), 0, m_nx - 2);
+            const int j0 = glm::clamp(static_cast<int>(floor(y0 / dy)), 0, m_ny - 2);
+
+            const float s = (x0 - i0 * dx) / dx;
+            const float t = (y0 - j0 * dy) / dy;
+
+            // update suru
+            d_new[IDX(i, j)] = sampleBilinear(d, i0, j0, s, t);
+            u_new[IDX(i, j)] = sampleBilinear(u, i0, j0, s, t);
+            v_new[IDX(i, j)] = sampleBilinear(v, i0, j0, s, t);
+        }
+    }
+
+    bnd(d_new);
+    bnd(u_new, v_new);
 
     // ----課題ここまで----
 }
@@ -63,31 +82,40 @@ void WaveSWE::pressure(float *d_new, float *d, float *u_new, float *v_new, float
     float dy = m_dy;
     float g = m_gravity;
 
-    // TODO:この部分にSWE計算での圧力項の計算コードを書く(中心差分で計算すること)
-    // ・配列d_new,u_new,v_newにそれぞれ移流項を適用した後の水深,x方向速度,y方向速度を格納する
-    // ・移流項適用前の水深,速度は配列d,u,vに格納されている
-    //   ⇒ 1次元配列を使っているので，取り出すときはd[IDX(i,j)]のようにIDX関数を使うと便利
-    // ・水面高さhはメンバ変数m_hに格納されていて，Update関数内で呼ばれているupdateHeight関数でその値が更新されている．
-    // ・各グリッドセルの幅は変数dx,dy(もしくはm_dx,m_dy)に入っている
-    // ・グリッドセル数はm_nx,m_nyで，境界を除いた部分を処理した後，境界処理関数bndを呼び出すのが基本的な流れ
-    //  for(int j = 1; j < m_ny-1; ++j){
-    //  	for(int i = 1; i < m_nx-1; ++i){
-    //  		// u,vの更新処理
-    //			// ⇒u_new,v_newに結果を格納
-    //  	}
-    //  }
-    //  bnd(u_new, v_new);
-    //  for(int j = 1; j < m_ny-1; ++j){
-    //  	for(int i = 1; i < m_nx-1; ++i){
-    //  		// dの更新処理(u_new,v_newを使う)
-    //			// ⇒d_newに結果を格納
-    //  	}
-    //  }
-    //  bnd(d_new);
-    //  ・こちらは移流計算と違ってu,vを更新するループを回し終わった後に，別のループでdを更新することになる．
-    //    dを更新するときは更新済みのu_new,v_newを使うこと
-
     // ----課題ここから----
+
+    const float inv2dx = 1.0f / (2.0f * dx);
+    const float inv2dy = 1.0f / (2.0f * dy);
+
+    // u & v
+    for (int j = 1; j < m_ny - 1; ++j) {
+        for (int i = 1; i < m_nx - 1; ++i) {
+            const int idx = IDX(i, j);
+
+            const float dh_dx = (m_h[IDX(i + 1, j)] - m_h[IDX(i - 1, j)]) * inv2dx;
+            const float dh_dy = (m_h[IDX(i, j + 1)] - m_h[IDX(i, j - 1)]) * inv2dy;
+
+            u_new[idx] -= g * dt * dh_dx;
+            v_new[idx] -= g * dt * dh_dy;
+        }
+    }
+
+    bnd(u_new, v_new);
+
+    // update d
+    for (int j = 1; j < m_ny - 1; ++j) {
+        for (int i = 1; i < m_nx - 1; ++i) {
+            const int idx = IDX(i, j);
+
+            const float du_dx = (u_new[IDX(i + 1, j)] - u_new[IDX(i - 1, j)]) * inv2dx;
+            const float dv_dy = (v_new[IDX(i, j + 1)] - v_new[IDX(i, j - 1)]) * inv2dy;
+            const float div = du_dx + dv_dy;
+
+            d_new[idx] = d[idx] - d[idx] * dt * div;
+        }
+    }
+
+    bnd(d_new);
 
     // ----課題ここまで----
 }
