@@ -171,3 +171,7 @@ void WaveSWE::pressure(float *d_new, float *d, float *u_new, float *v_new, float
     caption: [課題A]
   ),
 )
+
+== 課題 B
+
+スタガード格子を用いた速度定義位置の変更を行った。
