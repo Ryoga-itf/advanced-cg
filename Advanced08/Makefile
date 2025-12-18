@@ -19,7 +19,7 @@ IMGUI_LIB        := $(IMGUI_LIB_DIR)/libimgui.a
 VPATH := $(SRCDIR)
 
 SRCS := \
-  wave \
+  wave_B \
 	scene \
 	main
 
