@@ -175,3 +175,314 @@ void WaveSWE::pressure(float *d_new, float *d, float *u_new, float *v_new, float
 == 課題 B
 
 スタガード格子を用いた速度定義位置の変更を行った。
+
+まず配列のサイズに変更を加えた。それに伴って、 `Init` と `Update` を変更した。
+
+
+#sourcecode[```cpp
+/*!
+ * 波の初期化
+ *  - 水面がy=0になるように設定する
+ * @param[in] n グリッド数
+ * @param[in] scale 全体のスケール
+ * @param[in] ground 水底の高さを与える関数ポインタ
+ */
+void WaveSWE::Init(int n, float scale, float (*ground)(float, float)) {
+    // ハイトフィールドの解像度と全体の大きさ
+    m_nx = n;
+    m_ny = n;
+    m_scale = scale;
+
+    // 水底の高さを与える関数
+    m_ground = ground;
+
+    // 配列の初期化
+    m_h.resize(m_nx * m_ny, 0.0);
+    m_d.resize(m_nx * m_ny, 0.0);
+    m_dprev.resize(m_nx * m_ny, 0.0);
+    m_u.resize((m_nx + 1) * m_ny, 0.0);
+    m_v.resize(m_nx * (m_ny + 1), 0.0);
+    m_uprev.resize((m_nx + 1) * m_ny, 0.0);
+    m_vprev.resize(m_nx * (m_ny + 1), 0.0);
+
+    // メッシュ作成(グリッド幅m_dx,m_dyの計算もgenerateMeshでやっている)
+    glm::vec3 c1(-m_scale / 2.0f, 0.0f, -m_scale / 2.0f);
+    glm::vec3 c2(m_scale / 2.0f, 0.0f, m_scale / 2.0f);
+    generateMesh(c1, c2, m_mesh);
+    generateMesh(c1, c2, m_mesh_ground);
+
+    //! 波の初期化
+    for (int j = 0; j < m_ny; ++j) {
+        for (int i = 0; i < m_nx; ++i) {
+            int idx = IDX(i, j);
+            float b = m_ground(i * m_dx, j * m_dy);
+            m_d[idx] = m_dprev[idx] = -b; // 水面の高さ0なので水深は水底の高さに-1を掛けたものになる
+            m_u[idx] = m_uprev[idx] = 0.0;
+            m_v[idx] = m_vprev[idx] = 0.0;
+        }
+    }
+
+    // staggered
+    for (int j = 0; j < m_ny; ++j) {
+        for (int iu = 0; iu <= m_nx; ++iu) {
+            m_u[IDXU(iu, j)] = m_uprev[IDXU(iu, j)] = 0.0f;
+        }
+    }
+    for (int jv = 0; jv <= m_ny; ++jv) {
+        for (int i = 0; i < m_nx; ++i) {
+            m_v[IDXV(i, jv)] = m_vprev[IDXV(i, jv)] = 0.0f;
+        }
+    }
+
+    // 水面高さの更新
+    updateHeight(&m_d[0]);
+
+    // 水面ハイトフィールドメッシュの更新
+    updateMesh(m_h);
+
+    // 水底メッシュの更新(水底地形は変わらないと仮定しているので最初だけでよい)
+    for (int j = 0; j < m_ny; ++j) {
+        for (int i = 0; i < m_nx; ++i) {
+            int idx = IDX(i, j);
+            m_mesh_ground.vertices[idx][1] = m_ground(i * m_dx, j * m_dy);
+        }
+    }
+
+    // 法線再計算
+    CalVertexNormals(m_mesh);
+    CalVertexNormals(m_mesh_ground);
+}
+
+int WaveSWE::Update(int step, float dt) {
+    // 強制的な波の生成
+    if (m_surf)
+        makeSurf(step * dt, &m_dprev[0], 0.1);
+
+    // SWEによるハイトフィールドの更新
+
+    // 移流項(*_prev ⇒ *)
+    advection(&m_d[0], &m_dprev[0], &m_u[0], &m_v[0], &m_uprev[0], &m_vprev[0], dt);
+
+    // 粘性項(速度u,vは* ⇒ *_prev)
+    viscosity(&m_uprev[0], &m_vprev[0], &m_u[0], &m_v[0], dt);
+
+    // 水面高さ場hの更新(h=b+d)
+    updateHeight(&m_d[0]);
+
+    // 圧力項(水深dは* ⇒ *_prev，速度u,vは*_prev ⇒ *)
+    pressure(&m_dprev[0], &m_d[0], &m_u[0], &m_v[0], &m_uprev[0], &m_vprev[0], dt);
+
+    // 水面高さ場hの再更新と描画用メッシュの更新
+    updateHeight(&m_dprev[0]);
+    updateMesh(m_h);
+
+    // 次のステップのためにu_prev,v_prevを更新しておく
+    for (int i = 0; i < (m_nx + 1) * m_ny; ++i) {
+        m_uprev[i] = m_u[i];
+    }
+    for (int i = 0; i < m_nx * (m_ny + 1); ++i) {
+        m_vprev[i] = m_v[i];
+    }
+
+    return 1;
+}
+```
+]
+
+また、グリッドインデックスの計算において、スタガード格子のためのヘルパ関数を追加した。
+具体的には、以下の文をヘッダーファイルの `IDX` の定義の下に追加した。
+
+#sourcecode[```cpp
+    inline int IDXU(int iu, int j) { return iu + j * (m_nx + 1); }
+    inline int IDXV(int i, int jv) { return i + jv * (m_nx); }
+    inline int USZ() const { return (m_nx + 1) * m_ny; }
+    inline int VSZ() const { return m_nx * (m_ny + 1); }
+```
+]
+
+
+修正した `advection` 関数のコードは以下の通り。
+
+#sourcecode[```cpp
+void WaveSWE::advection(float *d_new, float *d, float *u_new, float *v_new, float *u, float *v, float dt) {
+    float dx = m_dx;
+    float dy = m_dy;
+
+    // ----課題ここから----
+    // スタガード格子
+    const float max_x = (m_nx - 1) * dx;
+    const float max_y = (m_ny - 1) * dy;
+
+    static auto sample_d = [&](const float *f, float x, float y) -> float {
+        x = glm::clamp(x, 0.0f, max_x);
+        y = glm::clamp(y, 0.0f, max_y);
+        const int i0 = glm::clamp(static_cast<int>(std::floor(x / dx)), 0, m_nx - 2);
+        const int j0 = glm::clamp(static_cast<int>(std::floor(y / dy)), 0, m_ny - 2);
+        const float s = (x - i0 * dx) / dx;
+        const float t = (y - j0 * dy) / dy;
+        const float f00 = f[IDX(i0, j0)];
+        const float f10 = f[IDX(i0 + 1, j0)];
+        const float f01 = f[IDX(i0, j0 + 1)];
+        const float f11 = f[IDX(i0 + 1, j0 + 1)];
+        const float f0 = glm::mix(f00, f10, s);
+        const float f1 = glm::mix(f01, f11, s);
+        return glm::mix(f0, f1, t);
+    };
+
+    static auto sample_u = [&](const float *fu, float x, float y) -> float {
+        // map to index space (iu,j)
+        const float iu_f = x / dx + 0.5f;
+        const float j_f = y / dy;
+        const int iu0 = glm::clamp(static_cast<int>(std::floor(iu_f)), 0, m_nx - 1);
+        const int j0 = glm::clamp(static_cast<int>(std::floor(j_f)), 0, m_nx - 2);
+        const float s = iu_f - iu0;
+        const float t = j_f - j0;
+        const float f00 = fu[IDXU(iu0, j0)];
+        const float f10 = fu[IDXU(iu0 + 1, j0)];
+        const float f01 = fu[IDXU(iu0, j0 + 1)];
+        const float f11 = fu[IDXU(iu0 + 1, j0 + 1)];
+        return glm::mix(glm::mix(f00, f10, s), glm::mix(f01, f11, s), t);
+    };
+
+    static auto sample_v = [&](const float *fv, float x, float y) -> float {
+        const float i_f = x / dx;
+        const float jv_f = y / dy + 0.5f;
+        const int i0 = glm::clamp(static_cast<int>(std::floor(i_f)), 0, m_nx - 2);
+        const int jv0 = glm::clamp(static_cast<int>(std::floor(jv_f)), 0, m_ny - 1);
+        const float s = i_f - i0;
+        const float t = jv_f - jv0;
+        const float f00 = fv[IDXV(i0, jv0)];
+        const float f10 = fv[IDXV(i0 + 1, jv0)];
+        const float f01 = fv[IDXV(i0, jv0 + 1)];
+        const float f11 = fv[IDXV(i0 + 1, jv0 + 1)];
+        return glm::mix(glm::mix(f00, f10, s), glm::mix(f01, f11, s), t);
+    };
+
+    // for d
+    for (int j = 0; j < m_ny; ++j) {
+        for (int i = 0; i < m_nx; ++i) {
+            const float x = i * dx;
+            const float y = j * dy;
+
+            const float uu = 0.5f * (u[IDXU(i, j)] + u[IDXU(i + 1, j)]);
+            const float vv = 0.5f * (v[IDXV(i, j)] + v[IDXV(i, j + 1)]);
+
+            const float x0 = x - dt * uu;
+            const float y0 = y - dt * vv;
+            d_new[IDX(i, j)] = sample_d(d, x0, y0);
+        }
+    }
+
+    // for u
+    for (int j = 0; j < m_ny; ++j) {
+        for (int iu = 0; iu <= m_nx; ++iu) {
+            const float x = (iu - 0.5f) * dx;
+            const float y = j * dy;
+
+            const float uu = u[IDXU(iu, j)];
+            const float vv = sample_v(v, x, y);
+            const float x0 = x - dt * uu;
+            const float y0 = y - dt * vv;
+            u_new[IDXU(iu, j)] = sample_u(u, x0, y0);
+        }
+    }
+
+    // for v
+    for (int jv = 0; jv <= m_ny; ++jv) {
+        for (int i = 0; i < m_nx; ++i) {
+            const float x = i * dx;
+            const float y = (jv - 0.5f) * dy;
+            const float vv = v[IDXV(i, jv)];
+            const float uu = sample_u(u, x, y);
+            const float x0 = x - dt * uu;
+            const float y0 = y - dt * vv;
+            v_new[IDXV(i, jv)] = sample_v(v, x0, y0);
+        }
+    }
+
+    bnd(d_new);
+    bnd(u_new, v_new);
+
+    // ----課題ここまで----
+}
+```]
+
+また、修正した `pressure` 関数のコードは以下の通り。
+
+#sourcecode[```cpp
+void WaveSWE::pressure(float *d_new, float *d, float *u_new, float *v_new, float *u, float *v, float dt) {
+    float dx = m_dx;
+    float dy = m_dy;
+    float g = m_gravity;
+
+    // ----課題ここから----
+    // u(i+1/2, j): use h(i,j) - h(i-1,j)
+    for (int j = 0; j < m_ny; ++j) {
+        for (int iu = 1; iu < m_nx; ++iu) {
+            const float hR = m_h[IDX(iu, j)];
+            const float hL = m_h[IDX(iu - 1, j)];
+            u_new[IDXU(iu, j)] = u[IDXU(iu, j)] - g * dt * (hR - hL) / dx;
+        }
+    }
+    // wall
+    for (int j = 0; j < m_ny; ++j) {
+        u_new[IDXU(0, j)] = 0.0f;
+        u_new[IDXU(m_nx, j)] = 0.0f;
+    }
+
+    // v(i, j+1/2): use h(i,j) - h(i,j-1)
+    for (int jv = 1; jv < m_ny; ++jv) {
+        for (int i = 0; i < m_nx; ++i) {
+            const float hU = m_h[IDX(i, jv)];
+            const float hD = m_h[IDX(i, jv - 1)];
+            v_new[IDXV(i, jv)] = v[IDXV(i, jv)] - g * dt * (hU - hD) / dy;
+        }
+    }
+    for (int i = 0; i < m_nx; ++i) {
+        v_new[IDXV(i, 0)] = 0.0f;
+        v_new[IDXV(i, m_ny)] = 0.0f;
+    }
+
+    bnd(u_new, v_new);
+
+    // update
+    for (int j = 0; j < m_ny; ++j) {
+        for (int i = 0; i < m_nx; ++i) {
+            const float div =
+                (u_new[IDXU(i + 1, j)] - u_new[IDXU(i, j)]) / dx + (v_new[IDXV(i, j + 1)] - v_new[IDXV(i, j)]) / dy;
+
+            const int idx = IDX(i, j);
+            d_new[idx] = d[idx] - d[idx] * dt * div;
+        }
+    }
+
+    bnd(d_new);
+
+    // ----課題ここまで----
+}
+}
+```]
+
+以上の
+
+- 配列確保・初期化（`Init` / コンストラクタ）
+- 速度の更新（`pressure` または `velocity update` 部分）
+- 水深 `d` の更新（`divergence` を使う部分）
+- 境界条件（`u, v` 用）
+
+を更新した。
+
+動かすと、以下の図のようになった。
+
+#stack(
+  dir: ltr,
+  spacing: 1em,
+  figure(
+    image("img_00001B.png", width: 48%),
+    caption: [課題B]
+  ),
+  figure(
+    image("img_00002B.png", width: 48%),
+    caption: [課題B]
+  ),
+)
