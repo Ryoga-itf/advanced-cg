@@ -22,3 +22,7 @@ OS は Void Linux である。
 $ cat /proc/version
 Linux version 6.12.52_1 (voidlinux@voidlinux) (gcc (GCC) 14.2.1 20250405, GNU ld (GNU Binutils) 2.44) #1 SMP PREEMPT_DYNAMIC Sun Oct 12 20:52:41 UTC 2025
 ```]
+
+#include "1.typ"
+
+#include "2.typ"
