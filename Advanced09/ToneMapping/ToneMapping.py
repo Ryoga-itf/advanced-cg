@@ -23,7 +23,9 @@ plt.imshow(ldr)
 
 ###非線形トーンマッピングの処理###
 gamma = 1 / 2.2
-# ★以下に必要な処理を書く
+# 課題 1-1: L' = L^γ, その後に最大値が100になるよう正規化
+ldr_L = hdr_L**gamma
+ldr_L = 100.0 * ldr_L / ldr_L.max()
 
 
 ldr_Lab = hdr_Lab.copy()  # LDR 画像の配列を用意
@@ -37,7 +39,12 @@ plt.imshow(ldr2)
 ###バイラテラルフィルタを使った非線形トーンマッピングの処理###
 eps = 1e-8  # log10(0)=-inf を避けるための定数
 log_hdr_L = np.log10(hdr_L + eps)  # 対数ドメインへ変換
-# ★以下に必要な処理を書く
+# 課題 1-2: base=BF(log10(L)), detail=log10(L)-base, base' = γ*base, alpha = -max(base') + log10(100), log10(L') = base' + detail + alpha
+base = cv2.bilateralFilter(log_hdr_L.astype(np.float32), 9, 1, 9)
+detail = log_hdr_L - base
+base_prime = gamma * base
+alpha = -base_prime.max() + np.log10(100.0)
+log_hdr_L = base_prime + detail + alpha
 
 
 ldr_L = 10.0**log_hdr_L - eps  # 対数domain の値を戻す
