@@ -89,7 +89,11 @@ $sigma_p$ と窓径はどのスケールまでを base（照明成分）とし�
 == 発展課題 1
 
 トーンマッピング中の `cv2.BilateralFilter` を自前の実装に置き換えたコードは以下のようになった。
+具体的には `bilateral_filter_gray` 関数を実装した。
 
 #sourcefile(read("../ToneMapping/ToneMapping_appendix.py"), file:"ToneMapping_appendix.py")
 
-なお、この実装は
+なお、この実装はかなり愚直なコードであるので、計算量は $Omicron (H W d^2)$ ほどある（はずである）。
+そのため、`cv2.BilateralFilter` を使うよりもずっと遅かった。
+
+実行結果は @f1 と同じようなものだった。
