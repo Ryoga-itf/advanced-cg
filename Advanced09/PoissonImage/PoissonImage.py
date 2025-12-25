@@ -24,18 +24,24 @@ I = scipy.sparse.diags(
 A = (
     scipy.sparse.eye(w * h) - I
 )  # Ωの外側(maskの値が0)の領域における画素と対応する対角成分に1を持つ疎行列を用意
-# ★Ωの内側(maskの値が1の領域)における画素と対応する行列Aの対角成分から4を減算
+# ★ Ωの内側(maskの値が1の領域)における画素と対応する行列Aの対角成分から4を減算
+A -= 4 * I
 A += scipy.sparse.hstack(
     (I[:, -1:], I[:, :-1])
 )  # Ω内の画素と対応する行、かつその右隣の画素と対応する列に1を加算
-# ★同様に左隣に1を加算
-# ★同様に上隣に1を加算
-# ★同様に下隣に1を加算
+# ★ 同様に左隣に1を加算
+A += scipy.sparse.hstack((I[:, 1:], I[:, :1]))
+# ★ 同様に上隣に1を加算
+A += scipy.sparse.hstack((I[:, w:], I[:, :w]))
+# ★ 同様に下隣に1を加算
+A += scipy.sparse.hstack((I[:, -w:], I[:, :-w]))
 
 # ベクトルbを計算
 b = target.copy()  # ターゲット画像のコピーを代入
 lap = np.zeros((h, w, 3), dtype=np.float64)  # ラプラシアンの計算結果を入れる配列
 # ★ソース画像のラプラシアンを計算しlapに代入
+kernel = np.array([[0, 1, 0], [1, -4, 1], [0, 1, 0]], dtype=np.float64)
+lap = cv2.filter2D(source, ddepth=-1, kernel=kernel, borderType=cv2.BORDER_REFLECT)
 b[mask > 0] = lap[mask > 0]  # Ωの内側にはソース画像のラプラシアンを代入
 
 # Ax=bを解いてxを求める
