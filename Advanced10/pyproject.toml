@@ -1,0 +1,7 @@
+[project]
+name = "advanced10"
+version = "0.1.0"
+description = "Advanced10 code"
+readme = "README.md"
+requires-python = ">=3.14"
+dependencies = []
