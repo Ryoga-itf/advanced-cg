@@ -25,4 +25,4 @@ Linux version 6.12.52_1 (voidlinux@voidlinux) (gcc (GCC) 14.2.1 20250405, GNU ld
 
 #include "1.typ"
 
-// #include "2.typ"
+#include "2.typ"
